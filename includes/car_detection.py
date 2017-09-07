@@ -59,7 +59,7 @@ class VehicleDetector():
         self.heatmap_fifo = deque(maxlen=self.heatmap_fifo_length)
         
         # Centroid FIFO (list of lists)
-        self.centroid_fifo = deque(maxlen=self.heatmap_fifo_length)
+        # self.centroid_fifo = deque(maxlen=self.heatmap_fifo_length)
         
         # Frame counter
         self.frame_count = 0
@@ -72,10 +72,10 @@ class VehicleDetector():
         self.mask_dilation_kernel = np.ones((50, 50))
         
         # Gaussian blur kernel size
-        self.blur_kernel = 3
+        # self.blur_kernel = 3
         
         # Threshold for heatmap
-        self.threshold = 3
+        self.threshold = 2
         
         
     def search_in_image(self, img):
@@ -169,7 +169,7 @@ class VehicleDetector():
             window_size = 64
             nblocks_per_window = (window_size // self.hog_pix_per_cell) -1
             
-            # If masking is enabled, we can try using a smaller overlap (12.5%)
+            # If masking is enabled, we can try using a smaller overlap (100 - 12.5%)
             if masking and scale < 1.5:
                 cells_per_step = 1  # Instead of overlap, define how many cells to step
             nxsteps = (nxblocks - nblocks_per_window) // cells_per_step
