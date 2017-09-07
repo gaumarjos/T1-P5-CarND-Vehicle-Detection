@@ -1,7 +1,5 @@
 ## Writeup Template
 
----
-
 **Vehicle Detection Project**
 
 The goals / steps of this project are the following:
@@ -17,7 +15,8 @@ The goals / steps of this project are the following:
 [car]: ./output_images/car.png
 [notcar]: ./output_images/notcar.png
 [hog]: ./output_images/hog.png
-
+[windows]: ./output_images/windows.png
+[detection]: ./output_images/detection.png
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
 ###Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
@@ -65,24 +64,38 @@ In this function features from the both `cars` and `notcars` datasets are extrac
 
 #### 1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
 
-I decided to search random window positions at random scales all over the image and came up with this (ok just kidding I didn't actually ;):
+The code for this step is contained in class `VehicleDetector` in file [includes/car_detection.py](./includes/car_detection.py). The specific method is `search_in_image`.
 
-![alt text][image3]
+The sliding windows search I implemented uses 4 different window sizes in the 4 different areas of the image, with scales of 1.0, 1.5, 2.0 and 2.5 (with respect to the default size of 64x64px). Smaller scales are used to detect cars further away on the horizon, increasing them as closer the cars are to the observer. Windows are 75% overlapping, this value was chosen as a compromise between a more accurate localization (higher overlapping) and an acceptable processing time (less windows, so less overlapping). A graphical description of the windows used is shown as follows.
+
+![alt text][windows]
+
+In order to obtain a more accurate localization of the cars while speeding up the processing, this kind of search covering the whole road area is actually performed only once every 50 frames (50 looked like a good compromise after a few tests on the video stream). In all other cases, the search area is limited to the area around which the last detections were. When a limited area is used, the number of search windows is reduced, hence speeding up the search. As I have observed that an overlap larger than 75%, 87.5%, is beneficial to detect cars that are further away, I temporarily increase it when searching in a limited area with the smallest window size (1.0x 64x64px). This produced smoother and less flickery localizations of distant cars.
+
+Another step in the direction of a faster algorithm included, as described in the lessons, using an image-wide HOG feature extraction instead of rerunning the algorithm on each window.
 
 #### 2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?
 
-Ultimately I searched on two scales using YCrCb 3-channel HOG features plus spatially binned color and histograms of color in the feature vector, which provided a nice result.  Here are some example images:
+To summarize, I searched on 4 scales using YCrCb 3-channel HOG features plus spatially binned color and histograms of color in the feature vector. Plus, I used a dynamic search area every 50 frames and I smoothed the final results by averaging over the last 4 frames. Here are some example images:
 
-![alt text][image4]
----
+![alt text][detection]
 
 ### Video Implementation
 
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (somewhat wobbly or unstable bounding boxes are ok as long as you are identifying the vehicles most of the time with minimal false positives.)
-Here's a [link to my video result](./project_video.mp4)
+
+Here's a [link to my video result](./videos/project_video.mp4)
 
 
 #### 2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
+
+
+
+Once the image has been searched for cars, each new detection ("on" windows, where a car has been detected) is summed up in a frame heatmap and this information is appended to a FIFO list of the last N frames (a depth of 4 proved a good compromise between reaction time and smoothing effect). The best heatmap for this frame is then computed as the threesholded sum of all the elements in this FIFO list. In between, I also considered using gaussian blur to blur the heatmap to further smoothen the result, but it hasn't been adding much so I excluded it from the final version. This is a simple and effective approach as it acts as a spatial running average. I also considered other approaches involving detecting the crentroid of the hot areas and then tracking it but proved to be complicated to apply and quite tricky when one vehicle overtakes and cover another.
+
+
+
+
 
 I recorded the positions of positive detections in each frame of the video.  From the positive detections I created a heatmap and then thresholded that map to identify vehicle positions.  I then used `scipy.ndimage.measurements.label()` to identify individual blobs in the heatmap.  I then assumed each blob corresponded to a vehicle.  I constructed bounding boxes to cover the area of each blob detected.  
 
