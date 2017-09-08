@@ -17,13 +17,13 @@ The goals / steps of this project are the following:
 [hog]: ./output_images/hog.png
 [windows]: ./output_images/windows.png
 [detection]: ./output_images/detection.png
-[searcharea]: ./searcharea.png
-[frame1]: ./frame1.png
-[frame2]: ./frame2.png
-[frame3]: ./frame3.png
-[frame4]: ./frame4.png
-[frame5]: ./frame5.png
-[frame6]: ./frame6.png
+[searcharea]: ./output_images/searcharea.png
+[frame1]: ./output_images/frame1.png
+[frame2]: ./output_images/frame2.png
+[frame3]: ./output_images/frame3.png
+[frame4]: ./output_images/frame4.png
+[frame5]: ./output_images/frame5.png
+[frame6]: ./output_images/frame6.png
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
 Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
