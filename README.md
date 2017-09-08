@@ -1,6 +1,4 @@
-## Writeup Template
-
-**Vehicle Detection Project**
+## Vehicle Detection Project
 
 The goals / steps of this project are the following:
 
@@ -21,9 +19,15 @@ The goals / steps of this project are the following:
 [frame1]: ./output_images/frame1.png
 [frame2]: ./output_images/frame2.png
 [frame3]: ./output_images/frame3.png
-[frame4]: ./output_images/frame4.png
-[frame5]: ./output_images/frame5.png
-[frame6]: ./output_images/frame6.png
+
+## List of files
+
+* Writeup: `README.md`
+* Notebook: `vehicles.ipynb`
+* Python code: see folder `includes`
+* Video files: see folder `videos`
+* Output images: contained in folder `output_images`, are the ones presented in this writeup.
+* Car classification: see `car_classification_datasets` for the dataset and `models` for the trained model(s).
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
 Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
@@ -93,7 +97,7 @@ Here are some detection examples:
 
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (somewhat wobbly or unstable bounding boxes are ok as long as you are identifying the vehicles most of the time with minimal false positives.)
 
-Here's a [link to my video result](./videos/project_video.mp4)
+Here's a [link to my video result](./videos/project_video_output.mp4)
 
 #### 2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
 
@@ -107,14 +111,11 @@ The so-obtained heatmaps were labelled using `scipy.ndimage.measurements.label` 
 
 To summarize the whole process, I searched on 4 scales using YCrCb 3-channel HOG features plus spatially binned color and histograms of color in the feature vector. I did that using a dynamic limited search area (reset every N frames). After that, I averaged (both to smoothen and to remove false positives) the final results by averaging over the last 4 frames.
 
-Here is an example of 6 frames when the two cars getting close to each other's:
+Here is an example of 3 consecutive frames when the two cars are moving away from each other's:
 
 ![alt text][frame1]
 ![alt text][frame2]
 ![alt text][frame3]
-![alt text][frame4]
-![alt text][frame5]
-![alt text][frame6]
 
 ### Discussion
 
