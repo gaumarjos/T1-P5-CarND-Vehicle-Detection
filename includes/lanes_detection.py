@@ -5,6 +5,8 @@ import pickle
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
+from includes.lanes_camera_calibration import *
+
 
 def gradient_magnitude_threshold(img, sobel_kernel=3, thresh=(0, 255)):
     
@@ -488,7 +490,7 @@ def draw_on_image(original_img, binary_img,
     color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
     
     # Generate x and y values for plotting
-    ploty = np.linspace(0, img.shape[0]-1, img.shape[0])
+    ploty = np.linspace(0, original_img.shape[0]-1, original_img.shape[0])
     left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
     right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
     
@@ -689,84 +691,100 @@ class Line():
                 self.best_fit = np.average(self.fits_history, axis=0)
 
 
-def pipeline(img):
-    
-    image = img.copy()
-    
-    # Image processing
-    undistorted, processed, M, Minv = image_processing_pipeline(image, mtx, dist)
-    
-    # Decide whether to work on a new frame or use info from the previous frame
-    if not left_line.detected or not right_line.detected:
+# Define a class to manage the detection process
+class LaneDetection():
+
+    def __init__(self,
+                 mtx,
+                 dist):
+                 
+        # Camera calibration
+        self.mtx = mtx
+        self.dist = dist
+        
+        # Lines
+        self.left_line = Line()
+        self.right_line = Line()
+        
+
+    def pipeline(self, img):
+        
+        image = img.copy()
+        
+        # Image processing
+        undistorted, processed, M, Minv = image_processing_pipeline(image, self.mtx, self.dist)
+        
+        # Decide whether to work on a new frame or use info from the previous frame
+        if not self.left_line.detected or not self.right_line.detected:
+            left_fit, \
+            right_fit, \
+            left_lane_inds, \
+            right_lane_inds, \
+            left_linetype, \
+            right_linetype = lines_fit_new_frame(processed,
+                                                 show=False)
+            new_detection = True
+        else:
+            left_fit, \
+            right_fit, \
+            left_lane_inds, \
+            right_lane_inds, \
+            left_linetype, \
+            right_linetype = lines_fit_based_on_previous_frame(processed,
+                                                               prev_left_fit=self.left_line.best_fit,
+                                                               prev_right_fit=self.right_line.best_fit,
+                                                               show=False)
+            new_detection = False
+        
+        # Now we have a fit, check conditions to decide whether this fit makes sense or not.
+        # If it does, add it to the list of good fits in the left_line and right_line objects, else, just
+        # say no good fit comes from this frame and let the object decide which of the previous ones makes
+        # sense to use.
+        
+        # Condition: line width must be within certain boundaries to make sense
         left_fit, \
-        right_fit, \
-        left_lane_inds, \
-        right_lane_inds, \
-        left_linetype, \
-        right_linetype = lines_fit_new_frame(processed,
-                                             show=False)
-        new_detection = True
-    else:
-        left_fit, \
-        right_fit, \
-        left_lane_inds, \
-        right_lane_inds, \
-        left_linetype, \
-        right_linetype = lines_fit_based_on_previous_frame(processed,
-                                                           prev_left_fit=left_line.best_fit,
-                                                           prev_right_fit=right_line.best_fit,
-                                                           show=False)
-        new_detection = False
-    
-    # Now we have a fit, check conditions to decide whether this fit makes sense or not.
-    # If it does, add it to the list of good fits in the left_line and right_line objects, else, just
-    # say no good fit comes from this frame and let the object decide which of the previous ones makes
-    # sense to use.
-    
-    # Condition: line width must be within certain boundaries to make sense
-    left_fit, \
-    right_fit = lane_width_validation(left_fit, 
-                                      right_fit, 
-                                      h=image.shape[0], 
-                                      expected_lane_width=700, 
-                                      expected_lane_width_margin=150)
-    
-    # Add the detected line to the Line object
-    left_line.add_fit(left_fit, left_lane_inds, left_linetype)
-    right_line.add_fit(right_fit, right_lane_inds, right_linetype)
-    
-    # Use the best fit, if it's the current one or some previous, is the object's decision
-    if left_line.best_fit is not None and right_line.best_fit is not None:
+        right_fit = lane_width_validation(left_fit, 
+                                          right_fit, 
+                                          h=image.shape[0], 
+                                          expected_lane_width=700, 
+                                          expected_lane_width_margin=150)
         
-        # Compute curvature and distance from centre
-        left_curve_radius, \
-        right_curve_radius, \
-        lane_width, \
-        centre_dist = curvature_radius_and_distance_from_centre(processed,
-                                                                left_line.best_fit,
-                                                                right_line.best_fit,
-                                                                left_lane_inds,        # possible error?
-                                                                right_lane_inds)       # possible error?
+        # Add the detected line to the Line object
+        self.left_line.add_fit(left_fit, left_lane_inds, left_linetype)
+        self.right_line.add_fit(right_fit, right_lane_inds, right_linetype)
         
-        # Produce output
-        undistorted_with_lines = draw_on_image(undistorted, processed,
-                                               left_line.best_fit,
-                                               right_line.best_fit,
-                                               left_lane_inds,
-                                               right_lane_inds,
-                                               Minv,
-                                               left_curve_radius=left_curve_radius,
-                                               right_curve_radius=right_curve_radius,
-                                               lane_width=lane_width,
-                                               centre_dist=centre_dist,
-                                               left_linetype=left_line.best_linetype,
-                                               right_linetype=right_line.best_linetype,
-                                               detection_type=new_detection,
-                                               show_processed=True,
-                                               show=False)
+        # Use the best fit, if it's the current one or some previous, is the object's decision
+        if self.left_line.best_fit is not None and self.right_line.best_fit is not None:
+            
+            # Compute curvature and distance from centre
+            left_curve_radius, \
+            right_curve_radius, \
+            lane_width, \
+            centre_dist = curvature_radius_and_distance_from_centre(processed,
+                                                                    self.left_line.best_fit,
+                                                                    self.right_line.best_fit,
+                                                                    left_lane_inds,        # possible error?
+                                                                    right_lane_inds)       # possible error?
+            
+            # Produce output
+            undistorted_with_lines = draw_on_image(undistorted, processed,
+                                                   self.left_line.best_fit,
+                                                   self.right_line.best_fit,
+                                                   left_lane_inds,
+                                                   right_lane_inds,
+                                                   Minv,
+                                                   left_curve_radius=left_curve_radius,
+                                                   right_curve_radius=right_curve_radius,
+                                                   lane_width=lane_width,
+                                                   centre_dist=centre_dist,
+                                                   left_linetype=self.left_line.best_linetype,
+                                                   right_linetype=self.right_line.best_linetype,
+                                                   detection_type=new_detection,
+                                                   show_processed=True,
+                                                   show=False)
+            
+            return undistorted_with_lines
         
-        return undistorted_with_lines
-    
-    else:
-        return undistorted
+        else:
+            return undistorted
 
