@@ -87,21 +87,29 @@ class VehicleDetector():
         img = img.astype(np.float32) / 255
         
         # Mask on what portion of the image we shall work
+        show_mask = 0
         if self.frame_count % self.full_frame_processing_every == 0:
             masking = False
             mask = np.ones_like(img[:, :, 0])
         else:
             masking = True
-            # f, (ax1, ax2) = plt.subplots(1,2, figsize=(20,10))
             mask = np.sum(np.array(self.heatmap_fifo), axis=0)
             mask[(mask > 0)] = 1
-            # ax1.imshow(mask)
+            
+            if show_mask:
+                f, (ax1, ax2) = plt.subplots(1,2, figsize=(20,10))
+                ax1.imshow(mask, cmap='gray')
+                ax1.set_title('Heatmap of frame k-1')
+                
             # Check if mask is all dark, in this case it doesn't make sense to have a mask
             if np.sum(mask) == 0:
                 mask = np.ones_like(img[:, :, 0])
             else:
                 mask = cv2.dilate(mask, self.mask_dilation_kernel, iterations=3)
-            # ax2.imshow(mask)
+                
+            if show_mask:
+                ax2.imshow(mask, cmap='gray')
+                ax2.set_title('Search area for frame k')
         
         # Add info on image
         if 0:
