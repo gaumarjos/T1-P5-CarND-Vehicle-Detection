@@ -111,7 +111,7 @@ The so-obtained heatmaps were labelled using `scipy.ndimage.measurements.label` 
 
 To summarize the whole process, I searched on 4 scales using YCrCb 3-channel HOG features plus spatially binned color and histograms of color in the feature vector. I did that using a dynamic limited search area (reset every N frames). After that, I averaged (both to smoothen and to remove false positives) the final results by averaging over the last 4 frames.
 
-Here is an example of 3 consecutive frames when the two cars are moving away from each other's:
+Here is an example of 3 consecutive frames:
 
 ![alt text][frame1]
 ![alt text][frame2]
