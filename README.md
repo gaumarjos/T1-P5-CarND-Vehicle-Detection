@@ -23,7 +23,8 @@ The goals / steps of this project are the following:
 ## List of files
 
 * Writeup: `README.md`
-* Notebook: `vehicles.ipynb`
+* Notebook for this project: `vehicles.ipynb`
+* Notebook merging lane and car detection: `vehicles_and_lanes.ipynb`
 * Python code: see folder `includes`
 * Video files: see folder `videos`
 * Output images: contained in folder `output_images`, are the ones presented in this writeup.
