@@ -23,8 +23,8 @@ The goals / steps of this project are the following:
 ## List of files
 
 * Writeup: `README.md`
-* Notebook for this project: `vehicles.ipynb`
-* Notebook merging lane and car detection: `vehicles_and_lanes.ipynb`
+* Notebook for this project: [vehicles.ipynb](./vehicles.ipynb)
+* Notebook merging lane and car detection: [vehicles_and_lane.ipynb](./vehicles_and_lane.ipynb) 
 * Python code: see folder `includes`
 * Video files: see folder `videos`
 * Output images: contained in folder `output_images`, are the ones presented in this writeup.
@@ -98,7 +98,9 @@ Here are some detection examples:
 
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (somewhat wobbly or unstable bounding boxes are ok as long as you are identifying the vehicles most of the time with minimal false positives.)
 
-Here's a [link to my video result](./videos/project_video_output.mp4)
+Here's a [link to the video result for this project](./videos/project_video_output.mp4)
+
+Here's a [link to the video result for lane and vehicle detection](./videos/project_video_output.mp4)
 
 #### 2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
 
