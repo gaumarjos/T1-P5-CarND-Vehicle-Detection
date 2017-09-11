@@ -466,24 +466,25 @@ def curvature_radius_and_distance_from_centre(img, left_fit, right_fit,
     return left_curve_radius, right_curve_radius, lane_width, centre_dist
 
 
-def draw_on_image(original_img, binary_img,
-                  left_fit, right_fit,
-                  left_lane_inds, right_lane_inds,
-                  Minv,
-                  left_curve_radius=None,
-                  right_curve_radius=None,
-                  lane_width=None,
-                  centre_dist=None,
-                  left_linetype=None,
-                  right_linetype=None,
-                  detection_type=None,
-                  show_processed=True,
-                  show=False):
+def draw_overlay(original_img, binary_img,
+                 left_fit, right_fit,
+                 left_lane_inds, right_lane_inds,
+                 Minv,
+                 left_curve_radius=None,
+                 right_curve_radius=None,
+                 lane_width=None,
+                 centre_dist=None,
+                 left_linetype=None,
+                 right_linetype=None,
+                 detection_type=None,
+                 show_processed=True,
+                 show=False):
     
-    # Make a copy of the original image
-    original_img_copy = np.copy(original_img)
+    # Create a blank canvas
+    blank_img = np.zeros_like(original_img, dtype=np.uint8)
+    
     if left_fit is None or right_fit is None:
-        return original_img_copy
+        return np.copy(original_img)
     
     # Create an image to draw the lines on
     warp_zero = np.zeros_like(binary_img).astype(np.uint8)
@@ -505,10 +506,10 @@ def draw_on_image(original_img, binary_img,
     cv2.polylines(color_warp, np.int32([pts_right]), isClosed=False, color=(0,255,255), thickness=25)
     
     # Warp the blank back to original image space using inverse perspective matrix (Minv)
-    newwarp = cv2.warpPerspective(color_warp, Minv, (original_img_copy.shape[1], original_img_copy.shape[0])) 
+    newwarp = cv2.warpPerspective(color_warp, Minv, (blank_img.shape[1], blank_img.shape[0])) 
     
     # Combine the result with the original image
-    original_image_with_lines = cv2.addWeighted(original_img_copy, 1, newwarp, 0.3, 0)
+    lines_img = cv2.addWeighted(blank_img, 1, newwarp, 0.3, 0)
     
     # Add curvature radius. The continuous line has more weight than the dashed one.
     font = cv2.FONT_HERSHEY_DUPLEX
@@ -525,13 +526,13 @@ def draw_on_image(original_img, binary_img,
             text = 'Radius: {:4.0f}m'.format(curve_radius)
         else:
             text = 'Radius: >5000m'
-        cv2.putText(original_image_with_lines, text, (40,70), font, 1.5, (255,255,255), 2, cv2.LINE_AA)
+        cv2.putText(lines_img, text, (40,70), font, 1.5, (255,255,255), 2, cv2.LINE_AA)
     
     # Add lane width, if provided
     if lane_width is not None:
         text = 'Lane width: {:04.2f}m'.format(lane_width)
         # text = 'Lane width: {:04.2f}m ({:04.0f}px)'.format(lane_width, lane_width / (3.7 / 700))
-        cv2.putText(original_image_with_lines, text, (40,70+50*1), font, 1.5, (255,255,255), 2, cv2.LINE_AA)
+        cv2.putText(lines_img, text, (40,70+50*1), font, 1.5, (255,255,255), 2, cv2.LINE_AA)
     
     # Add distance from centre, if provided
     if centre_dist is not None:
@@ -540,19 +541,19 @@ def draw_on_image(original_img, binary_img,
         else:
             direction = 'left'
         text = 'Car {:04.2f}m {} of centre'.format(abs(centre_dist), direction)
-        cv2.putText(original_image_with_lines, text, (40,70+50*2), font, 1.5, (255,255,255), 2, cv2.LINE_AA)
+        cv2.putText(lines_img, text, (40,70+50*2), font, 1.5, (255,255,255), 2, cv2.LINE_AA)
     
     if 0:
         if left_linetype is not None and right_linetype is not None:
             text = 'L: {}  R: {}'.format(left_linetype, right_linetype)
-            cv2.putText(original_image_with_lines, text, (40,70+50*3), font, 1.5, (255,255,255), 2, cv2.LINE_AA)
+            cv2.putText(lines_img, text, (40,70+50*3), font, 1.5, (255,255,255), 2, cv2.LINE_AA)
         
     # Show processed image in a box on the upper right corner
     if show_processed:
         
         # Create an image to draw on and an image to show the selection window
         out_img = np.dstack((binary_img, binary_img, binary_img))*255
-        window_img = np.zeros_like(out_img)
+        window_img = np.ones_like(out_img)*30
         
         # Left line pixels in red and right line pixels in blue
         nonzero = binary_img.nonzero()
@@ -578,9 +579,9 @@ def draw_on_image(original_img, binary_img,
         little_img = cv2.resize(little_img, None,
                                       fx=0.25, fy=0.25,
                                       interpolation = cv2.INTER_CUBIC)
-        original_image_with_lines[40:40 + little_img.shape[0], \
-                                  original_image_with_lines.shape[1] - little_img.shape[1] - 40 : \
-                                  original_image_with_lines.shape[1] - 40] = little_img
+        lines_img[40:40 + little_img.shape[0], \
+                                  lines_img.shape[1] - little_img.shape[1] - 40 : \
+                                  lines_img.shape[1] - 40] = little_img
         
         # Add letter to show if it's a new detection or using previous frames
         if detection_type is not None:
@@ -588,15 +589,15 @@ def draw_on_image(original_img, binary_img,
                 text = 'N'
             else:
                 text = 'P'
-            cv2.putText(original_image_with_lines, text,
-                        (original_image_with_lines.shape[1] - 40 - 50, 40 + little_img.shape[0] + 50),
+            cv2.putText(lines_img, text,
+                        (lines_img.shape[1] - 40 - 50, 40 + little_img.shape[0] + 50),
                         font, 1.5, (255,255,255), 2, cv2.LINE_AA)
-        
+    
     if show:
         f, ax = plt.subplots()
-        ax.imshow(original_image_with_lines)
-        
-    return original_image_with_lines
+        ax.imshow(lines_img)
+    
+    return lines_img
 
 
 # Define a class to receive the characteristics of each line detection
@@ -696,7 +697,8 @@ class LaneDetection():
 
     def __init__(self,
                  mtx,
-                 dist):
+                 dist,
+                 full_output=True):
                  
         # Camera calibration
         self.mtx = mtx
@@ -705,6 +707,9 @@ class LaneDetection():
         # Lines
         self.left_line = Line()
         self.right_line = Line()
+        
+        # Overlay or full image output
+        self.full_output = full_output
         
 
     def pipeline(self, img):
@@ -766,25 +771,33 @@ class LaneDetection():
                                                                     left_lane_inds,        # possible error?
                                                                     right_lane_inds)       # possible error?
             
-            # Produce output
-            undistorted_with_lines = draw_on_image(undistorted, processed,
-                                                   self.left_line.best_fit,
-                                                   self.right_line.best_fit,
-                                                   left_lane_inds,
-                                                   right_lane_inds,
-                                                   Minv,
-                                                   left_curve_radius=left_curve_radius,
-                                                   right_curve_radius=right_curve_radius,
-                                                   lane_width=lane_width,
-                                                   centre_dist=centre_dist,
-                                                   left_linetype=self.left_line.best_linetype,
-                                                   right_linetype=self.right_line.best_linetype,
-                                                   detection_type=new_detection,
-                                                   show_processed=True,
-                                                   show=False)
+            # Produce output overlay
+            overlay = draw_overlay(undistorted, processed,
+                                   self.left_line.best_fit,
+                                   self.right_line.best_fit,
+                                   left_lane_inds,
+                                   right_lane_inds,
+                                   Minv,
+                                   left_curve_radius=left_curve_radius,
+                                   right_curve_radius=right_curve_radius,
+                                   lane_width=lane_width,
+                                   centre_dist=centre_dist,
+                                   left_linetype=self.left_line.best_linetype,
+                                   right_linetype=self.right_line.best_linetype,
+                                   detection_type=new_detection,
+                                   show_processed=True,
+                                   show=False)
+                                   
+            if self.full_output:
+                # Merge overlay and original undistorted image
+                return cv2.addWeighted(undistorted, 1.0, overlay, 1.0, 0.0)
+            else:
+                # Just return the overlay
+                return overlay
             
-            return undistorted_with_lines
+            
         
         else:
-            return undistorted
+            # Return a blank image
+            return np.zeros_like(undistorted, dtype=np.uint8)
 

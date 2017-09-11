@@ -30,7 +30,8 @@ class VehicleDetector():
                  hog_cell_per_block=2,             # HOG number of cells per block
                  spatial_size=(32,32),             # SPATIAL features resize
                  histogram_bins=32,                # HISTOGRAM number of bins
-                 show_intermediate_results=False):
+                 show_intermediate_results=False,
+                 full_output=True):
         
         self.classifier = classifier
         self.scaler = scaler
@@ -43,6 +44,8 @@ class VehicleDetector():
         self.histogram_bins = histogram_bins
         self.show_intermediate_results = show_intermediate_results
         self.show_intermediate_video = False
+        
+        self.full_output = full_output
         
         self.search_settings = (((400, 400+64+64), 1.0, 2),
                                 ((380, 380+96+64), 1.5, 2),
@@ -244,7 +247,14 @@ class VehicleDetector():
         # Find final boxes from heatmap using label function
         labels = label(self.heatmap)
         bboxes = self.generate_bboxes(labels)
-        draw_img = self.draw_boxes(draw_img, bboxes)
+        
+        # Draw output image
+        # Draw on camera image
+        if self.full_output:
+            draw_img = self.draw_boxes(draw_img, bboxes)
+        # Draw on blank canvas
+        else:
+            draw_img = self.draw_boxes(np.zeros_like(draw_img, dtype=np.uint8), bboxes)
         
         if self.show_intermediate_results:
             f, (ax1, ax2, ax3) = plt.subplots(1,3, figsize=(20,10))
