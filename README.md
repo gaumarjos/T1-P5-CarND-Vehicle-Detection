@@ -100,7 +100,7 @@ Here are some detection examples:
 
 Here's a [link to the video result for this project](./videos/project_video_output.mp4)
 
-Here's a [link to the video result for lane and vehicle detection](./videos/project_video_output.mp4)
+Here's a [link to the video result for lane and vehicle detection](./videos/project_video_vehicles_and_lane.mp4)
 
 #### 2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
 
