@@ -698,7 +698,8 @@ class LaneDetection():
     def __init__(self,
                  mtx,
                  dist,
-                 full_output=True):
+                 full_output=True,
+                 undistort_only=False):
                  
         # Camera calibration
         self.mtx = mtx
@@ -711,10 +712,17 @@ class LaneDetection():
         # Overlay or full image output
         self.full_output = full_output
         
+        # Just undistort
+        self.undistort_only = undistort_only
+        
 
     def pipeline(self, img):
         
         image = img.copy()
+        
+        # Return undistorted version if that's all you need
+        if self.undistort_only:
+            return undistort_image(image, self.mtx, self.dist)
         
         # Image processing
         undistorted, processed, M, Minv = image_processing_pipeline(image, self.mtx, self.dist)

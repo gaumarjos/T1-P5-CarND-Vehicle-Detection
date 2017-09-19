@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 
-def camera_calibration(img_size, verbose = False):
-    
-    # Number of corners in the checkboard
-    nx = 9
-    ny = 6
+def camera_calibration(img_size,
+                       calibration_filenames='camera_calibration/calibration*.jpg',
+                       nx=9,                                                             # X number of corners in the checkboard
+                       ny=6,                                                             # Y number of corners in the checkboard
+                       verbose=False):
 
     # Prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
     objp = np.zeros((ny*nx,3), np.float32)
@@ -21,7 +21,7 @@ def camera_calibration(img_size, verbose = False):
     imgpoints = [] # 2d points in image plane
 
     # Make a list of calibration images
-    images = glob.glob('camera_calibration/calibration*.jpg')
+    images = glob.glob(calibration_filenames)
 
     # Step through the list and search for chessboard corners
     for idx, fname in enumerate(images):
@@ -37,13 +37,21 @@ def camera_calibration(img_size, verbose = False):
         if ret == True:
             objpoints.append(objp)
             imgpoints.append(corners)
-
-            if verbose:
-                f, ax = plt.subplots()
-                ax.imshow(img)
-    
+                
     # Compute calibration coefficients
     ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, img_size, None, None)
+    
+    if verbose:
+        for idx, fname in enumerate(images):
+            img = cv2.imread(fname)
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            ret, corners = cv2.findChessboardCorners(gray, (nx, ny), None)
+            
+            f, (ax1, ax2) = plt.subplots(1, 2, figsize=(20,10))
+            cv2.drawChessboardCorners(img, (nx, ny), corners, ret)
+            ax1.imshow(img)
+            img_undistorted = undistort_image(img, mtx, dist)
+            ax2.imshow(img_undistorted)
     
     # Save for future use
     dist_pickle = {}
